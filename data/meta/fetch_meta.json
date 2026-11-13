@@ -1,0 +1,9 @@
+{
+  "fetched_at": "2026-11-13T18:33:02",
+  "errors": [
+    "valuation 深证成指: '深证成指'",
+    "{'code': '689009', 'price_error': 'No value to decode', 'value': 1466}"
+  ],
+  "stocks": 800,
+  "elapsed_s": 2678.1
+}
