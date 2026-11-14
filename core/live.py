@@ -29,7 +29,7 @@ WATCH_POOL = {
     "000016.SH": ("上证50", "指数"),
     "000852.SH": ("中证1000", "指数"),
     "899050.BJ": ("北证50", "指数"),
-    "000985.SH": ("中证全指", "指数"),
+    "000985.CSI": ("中证全指", "指数"),
     "600519.SH": ("贵州茅台", "个股"),
     "300750.SZ": ("宁德时代", "个股"),
     "601318.SH": ("中国平安", "个股"),
@@ -244,7 +244,7 @@ def resolve(text: str) -> tuple[str, str]:
     if "." in upper:
         return upper, WATCH_POOL.get(upper, (upper, ""))[0]
     if t in INDEX_CODES:
-        suffix = "BJ" if t.startswith("899") else ("SZ" if t.startswith("399") else "SH")
+        suffix = "BJ" if t.startswith("899") else ("SZ" if t.startswith("399") else ("CSI" if t == "000985" else "SH"))
         code = f"{t}.{suffix}"
         return code, WATCH_POOL.get(code, (code, ""))[0]
     names = all_stock_names()
