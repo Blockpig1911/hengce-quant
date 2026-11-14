@@ -1,4 +1,4 @@
-"""衡策 HENGCE — 跨资产量化决策平台 (Streamlit entry point)."""
+"""Blockpig — A股量化平台 (Streamlit entry point)."""
 from __future__ import annotations
 
 import json
@@ -12,11 +12,11 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from core import allocation, commodities, data, factors, live, news, signals
-from core.config import (ASSET_COLORS, DATA, DISCLAIMER, FUTURES_META,
+from core.config import (ASSET_COLORS, DATA, FUTURES_META,
                          INDEX_META, PALETTE, PLOTLY_FONT, SECTOR_META)
 from core.indicators import drawdown, metrics_from_returns, returns, sma
 
-st.set_page_config(page_title="衡策 HENGCE · 跨资产量化平台", page_icon="◈",
+st.set_page_config(page_title="Blockpig · A股量化平台", page_icon="◈",
                    layout="wide", initial_sidebar_state="expanded")
 
 CSS = """
@@ -219,11 +219,10 @@ def page_overview():
     bond = data.bond_10y()
     erp = (1 / 13.0) - bond.iloc[-1] / 100 if not bond.empty else np.nan
 
-    hero("A股总览 · 衡策", "先看市场贵不贵、趋势强不强、新闻偏暖还是偏冷，再决定要不要出手。",
-         ["A股 · 行业 · 因子", "沪深800深度覆盖 + 全A搜索",
+    hero("A股总览 · Blockpig", "先看市场贵不贵、趋势强不强、新闻偏暖还是偏冷，再决定要不要出手。",
+         ["A股 · 行业 · 因子", "全部 A 股",
           "实时盯盘 + 模拟盘", "公开数据 · 可复现"])
-    explain("这一页是“出门前看天气”：沪深300的市盈率处在历史什么位置，指数在均线之上还是之下，"
-            "多少股票还在200日线上，新闻整体偏正面还是偏负面。它不告诉你买哪只，只告诉你现在适合重仓还是谨慎。")
+    explain("看市场整体估值、趋势和新闻情绪，再决定仓位。")
 
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("市场温度", f"{temp_v:.0f} / 100" if not np.isnan(temp_v) else "—",
@@ -444,8 +443,7 @@ DIR_COLOR = {"买入": "#1f6f4a", "加仓": "#2e8b6f", "持有": "#2e8b6f",
 def page_live():
     hero("A股实时盯盘", "手动启动后每 30 秒取一次行情：给方向，再用虚拟账户记录按这个方向买卖的结果。",
          ["同花顺 iFinD", "30 秒刷新", "模拟成交", "T+1 约束"])
-    explain("这页不预测明天涨跌。它把每只股票自己的历史评分和今天的涨跌放在一起，给出买入、观望或减仓；"
-            "然后用 100 万虚拟资金按这个方向买卖，记录赚亏。看的是这套规则在当前市场是否顺手，不是保证收益。")
+    explain("用历史评分加当天涨跌给出方向，再用虚拟账户记录买卖结果。不预测明天，也不保证赚钱。")
 
     if "paper" not in st.session_state:
         st.session_state.paper = _paper_new()
@@ -477,7 +475,7 @@ def page_live():
             st.rerun()
     allow_trade = is_open or force
 
-    st.caption("手动启动是为了控制同花顺接口配额；每次刷新只发 1 次批量请求。接口失败会自动降级到新浪公开行情。")
+    st.caption("手动启动，每 30 秒请求一次；接口失败自动改用新浪行情。")
 
     @st.fragment(run_every=30)
     def dashboard():
@@ -579,7 +577,7 @@ def page_live():
                 st.dataframe(pd.DataFrame(acc["trades"]), hide_index=True, width="stretch")
 
     dashboard()
-    st.caption(DISCLAIMER + " 模拟盘不构成投资建议，也不会向券商发送任何真实委托。")
+    st.caption("模拟盘只在本地记账，不发送真实委托。")
 
 
 # ------------------------------------------------------------------ page 1b
@@ -591,8 +589,7 @@ def load_news() -> pd.DataFrame:
 def page_news():
     hero("新闻情绪", "把公开新闻标题按关键词分成利好和利空，做成 0–100 的情绪分。它只衡量措辞倾向，不判断新闻真假。",
          ["东方财富 7×24 快讯", "关键词法", "5 分钟缓存"])
-    explain("先取最近几个小时的财经快讯，用一份利好/利空词表给每条标题打分，再平均成市场情绪分，"
-            "并按行业关键词分组。它读不懂反讽和否定，只适合当“关注度+措辞方向”的辅助指标。")
+    explain("把快讯标题按词表分成利好利空，做成情绪分。读不懂上下文，只作辅助。")
 
     left, right = st.columns([1, 4])
     with left:
@@ -706,15 +703,14 @@ def page_news():
 
 **局限**：关键词法读不懂反讽、否定和上下文，也无法判断新闻真假；它更适合做“关注度 + 措辞方向”的辅助指标，不能单独作为买卖依据。
 """)
-    st.caption("新闻来自东方财富公开快讯，仅用于课程研究，不构成投资建议。")
+    st.caption("新闻来自东方财富公开快讯。")
 
 
 # ------------------------------------------------------------------ page 3b
 def page_finance():
     hero("财务指标", "看一只股票的盈利、成长、负债和估值，再和同池公司做横向比较。",
          ["ROE", "毛利率", "负债率", "营收增速"])
-    explain("财务指标来自公司季报，反映的是已经发生的经营结果，不是股价预测。"
-            "一般把高 ROE、低负债、稳定增长看作质量较好，但要结合行业和估值一起看。")
+    explain("财务指标来自季报，反映已经发生的经营结果，不预测股价。")
 
     fin = load_derived("fin_snapshot")
     if fin.empty:
@@ -766,9 +762,9 @@ def page_finance():
     key_map = {"ROE": "roe", "营收增速": "rev_growth", "净利润增速": "profit_growth",
                "毛利率": "gross_margin", "PE": "pe"}
     view = view.sort_values(key_map[sort_by], ascending=(sort_by == "PE")).head(60)
-    show = view[["name", "code", "roe", "gross_margin", "net_margin", "debt_ratio",
+    show = view[["name", "code", "industry", "roe", "gross_margin", "net_margin", "debt_ratio",
                  "rev_growth", "profit_growth", "asset_growth", "pe", "pb", "mcap"]].copy()
-    show.columns = ["名称", "代码", "ROE", "毛利率", "净利率", "负债率",
+    show.columns = ["名称", "代码", "行业", "ROE", "毛利率", "净利率", "负债率",
                     "营收增速", "净利增速", "资产增速", "PE", "PB", "市值(亿)"]
     show["市值(亿)"] = (show["市值(亿)"] / 1e8).round(0)
     for c in ["ROE", "毛利率", "净利率", "负债率", "营收增速", "净利增速", "资产增速"]:
@@ -784,8 +780,7 @@ def page_finance():
 def page_xray():
     hero("个股诊断 · X-Ray", "把一只股票和它自己的历史比：估值贵不贵、趋势坏没坏、未来一年可能落在什么区间。",
          ["估值分位", "买卖区间", "蒙特卡洛", "止损与仓位"])
-    explain("这里不是给目标价。它做三件事：看当前市盈率在近8年中的位置；看价格相对均线是强是弱；"
-            "用过去3年的日涨跌随机组合出2000条未来一年的路径，给出一个区间。买入区间和止损只是参考。")
+    explain("看估值位置、趋势和未来一年可能区间。买入区间和止损只是参考。")
 
     qp_kind = st.query_params.get("kind", "")
     kind = st.segmented_control("资产类别", ["个股", "宽基指数", "行业"],
@@ -820,13 +815,13 @@ def page_xray():
         df = data.load_futures(sym)
         pe_series = pd.Series(dtype=float)
     else:
-        uni = data.load_universe()
+        uni = data.load_all_universe()
         mapping = {f"{r['name']} ({r['code']})": r["code"] for _, r in uni.iterrows()}
         vals = list(mapping.values())
         idx = vals.index(qp_code) if qp_code in vals else (vals.index("600519") if "600519" in vals else 0)
-        label = st.selectbox("选择个股（沪深800深度池）", list(mapping), index=idx)
+        label = st.selectbox("选择个股（全部 A 股）", list(mapping), index=idx)
         code = mapping[label]
-        st.caption("深度诊断覆盖 791 只沪深300/中证500成分股；其余 4,788 只 A 股可在“实时盯盘”输入代码，使用盘中信号。")
+        st.caption("全部 A 股可查；有历史行情的显示完整诊断，其余显示实时快照。")
         d = signals.stock_diagnosis(code)
         df = data.load_stock_price(code)
         val = data.load_stock_value(code)
@@ -840,10 +835,13 @@ def page_xray():
     action, color = d.get("action"), d.get("color")
     if not action:
         action, color = signals.action_for(score)
-    buy = (signals.buy_zone_from_pe(df["close"], pe_series) if not pe_series.empty
-           else signals.buy_zone_from_price(df["close"]))
-    risk = signals.stop_level(df)
-    mc = signals.monte_carlo(df["close"])
+    if df.empty:
+        buy, risk, mc = {}, {}, {}
+    else:
+        buy = (signals.buy_zone_from_pe(df["close"], pe_series) if not pe_series.empty
+               else signals.buy_zone_from_price(df["close"]))
+        risk = signals.stop_level(df)
+        mc = signals.monte_carlo(df["close"])
 
     val_pct = (d.get("valuation") or {}).get("pct")
     if val_pct is None:
@@ -854,6 +852,14 @@ def page_xray():
     c3.metric("估值/价格分位", f"{val_pct*100:.0f}%" if not pd.isna(val_pct) else "—")
     c4.metric("近12月", fmt_pct(d.get("ret_12m", np.nan)))
     c5.metric("距高点回撤", fmt_pct(d.get("drawdown", np.nan)))
+
+    if df.empty:
+        st.info("这只股票暂无历史行情，当前只提供实时快照。")
+        st.dataframe(pd.DataFrame([{
+            "代码": code, "名称": d.get("name"), "最新价": d.get("price"),
+            "PE": d.get("pe"), "PB": d.get("pb"),
+        }]), hide_index=True, width="stretch")
+        return
 
     if kind == "个股":
         try:
@@ -982,15 +988,13 @@ def page_xray():
         }
         tbl = pd.DataFrame([{"指标": k, "数值": v} for k, v in items.items() if v is not None])
         st.dataframe(tbl, hide_index=True, width="stretch")
-        st.caption(DISCLAIMER)
 
 
 # ------------------------------------------------------------------ page 2
 def page_sectors():
     hero("行业轮动", "31 个申万一级行业：看哪些便宜、哪些正在走强，再用一条简单规则回测。",
          ["四象限定位", "动量前 5", "沪深300 200 日线择时"])
-    explain("左边是价格位置，越靠左说明相对过去5年越便宜；下面是动量，越靠上说明最近一年越强。"
-            "回测规则很朴素：每月挑动量最强的5个行业，如果沪深300跌破200日线就空仓。看它过去8年是否跑赢行业等权。")
+    explain("按价格位置和动量给行业排序，并回测一条简单的轮动规则。")
     sig = get_signals()
     sec = sig[sig["type"] == "行业指数"].copy()
     if sec.empty:
@@ -1057,10 +1061,8 @@ def page_sectors():
 # ------------------------------------------------------------------ page 3
 def page_factors():
     hero("策略实验室", "用 8 个常见因子做一次体检：它们和未来涨跌到底有没有关系。",
-         ["2019–2026", "791 只成分股", "月度调仓 20bp", "均值 vs 中位数"])
-    explain("因子就是选股时看的一个特征，比如“便宜”（PE低）、“最近涨得好”（动量）、“波动小”。"
-            "IC 是当月因子值和下个月涨跌的横截面相关性，越接近0越没用。分层图把股票按因子从低到高分成5组，看高分组是否真的跑赢。"
-            "多空组合是买高分组、卖低分组；A股融券难，所以它只用来判断因子有没有效，不是实盘策略。")
+         ["2019–2026", "A股因子池", "月度调仓 20bp", "均值 vs 中位数"])
+    explain("因子是选股特征。IC 衡量它和下月涨跌的关系，分层看高分组是否真的更强。")
     ic = load_derived("factor_ic")
     summ = load_derived("factor_summary")
     q = load_derived("factor_quantiles")
@@ -1258,7 +1260,7 @@ def page_factors():
 
 # ------------------------------------------------------------------ page 4
 def page_allocation():
-    hero("资产配置", "股票、债券、黄金、商品四类资产：风险平价、双动量、60/40 与衡策组合的实证对比。",
+    hero("资产配置", "股票、债券、黄金、商品四类资产：风险平价、双动量、60/40 与Blockpig组合的实证对比。",
          ["2010–2026", "月度再平衡", "风险预算 + 动量择时 + 波动率目标"])
     nav = load_derived("strategy_nav")
     summ = load_derived("strategy_summary")
@@ -1272,7 +1274,7 @@ def page_allocation():
     for i, c in enumerate(nav.columns):
         fig.add_trace(go.Scatter(x=nav.index, y=nav[c], name=c,
                                  line=dict(color=[ "#1f4e79", "#2e8b6f", "#c9a227", "#b35c2e"][i % 4],
-                                           width=2.4 if c == "衡策组合" else 1.6)))
+                                           width=2.4 if c == "Blockpig组合" else 1.6)))
     fig.update_yaxes(title="累计净值（起点=1）")
     st.plotly_chart(fig_base(fig, 430, "四类配置策略：累计净值"), width="stretch")
 
@@ -1284,7 +1286,7 @@ def page_allocation():
                                      num_cols=["夏普比率", "卡玛比率"]),
                          width="stretch", hide_index=True)
     with c2:
-        st.markdown("##### 衡策组合最新权重")
+        st.markdown("##### Blockpig组合最新权重")
         if not w.empty:
             last = w[w["date"] == w["date"].max()].sort_values("weight", ascending=False)
             fig = go.Figure(go.Bar(x=last["weight"], y=last["asset"], orientation="h",
@@ -1301,9 +1303,9 @@ def page_allocation():
                 fig.add_trace(go.Scatter(x=piv.index, y=piv[a], stackgroup="one", name=a,
                                          line=dict(width=0.4, color=ASSET_COLORS.get(a, "#8a8f98"))))
             fig.update_yaxes(tickformat=".0%", title="权重")
-            st.plotly_chart(fig_base(fig, 360, "衡策组合权重演变"), width="stretch")
+            st.plotly_chart(fig_base(fig, 360, "Blockpig组合权重演变"), width="stretch")
     with right:
-        st.plotly_chart(drawdown_fig(nav["衡策组合"], "衡策组合", 360), width="stretch")
+        st.plotly_chart(drawdown_fig(nav["Blockpig组合"], "Blockpig组合", 360), width="stretch")
 
     left, right = st.columns(2)
     with left:
@@ -1328,8 +1330,7 @@ def page_allocation():
 def page_portfolio():
     hero("组合回测", "自己配股票、债券、黄金、商品的比例，看历史收益、回撤和极端行情下会亏多少。",
          ["60/40 基准", "月度再平衡", "风险贡献", "压力测试"])
-    explain("拖动五个滑块设定比例，系统按月度再平衡回测。风险贡献告诉你组合的波动主要来自谁；"
-            "压力测试看2015股灾、2018熊市、2020疫情等区间里，这个组合大概会亏多少。回测不含滑点和手续费。")
+    explain("设定资产比例，回测收益、回撤和极端行情下的表现。")
     rets = allocation.portfolio_monthly_returns()
     defaults = {"沪深300": 35, "中证500": 15, "债券": 30, "黄金": 10, "商品": 10}
     cols = st.columns(5)
@@ -1363,7 +1364,7 @@ def page_portfolio():
     strat = load_derived("strategy_nav")
     if not strat.empty:
         strat = strat.set_index("date")
-        fig.add_trace(go.Scatter(x=strat.index, y=strat["衡策组合"], name="衡策组合",
+        fig.add_trace(go.Scatter(x=strat.index, y=strat["Blockpig组合"], name="Blockpig组合",
                                  line=dict(color="#2e8b6f", width=1.8)))
     fig.update_yaxes(title="累计净值（起点=1）")
     st.plotly_chart(fig_base(fig, 400, "自定义组合：累计净值"), width="stretch")
@@ -1478,8 +1479,8 @@ def page_signals():
     n_a = int((sig["type"] != "商品").sum())
     hero("今日信号", f"把 {n_a} 个 A 股标的按同一套规则排序：先看相对赔率，再决定关注什么、避开什么。",
          ["A股统一评分", "可下载 CSV", "每日更新"])
-    explain("这是一张排序表，不是买入清单。分数由估值位置、趋势、动量、波动等维度合成；"
-            "分数高只表示“相对更值得看”，还要结合资产诊断里的买入区间和止损。")
+    explain("按同一套规则排序，不是买入清单。")
+    
     if sig.empty:
         st.warning("信号表未生成。")
         return
@@ -1569,7 +1570,7 @@ def page_about():
         st.markdown(card("赔率 × 胜率", "不用一个分数掩盖矛盾：估值回答“能赚多少”，趋势回答“现在买会不会挨打”，再映射到六种动作。"),
                     unsafe_allow_html=True)
     with f2:
-        st.markdown(card("A股同一把尺", "791 只沪深300/中证500成分股、31 个申万行业与全 A 代码搜索，共用估值、趋势、动量、风险四维框架。"),
+        st.markdown(card("A股同一把尺", "全 A 股、31 个申万行业共用估值、趋势、动量、风险四维框架。"),
                     unsafe_allow_html=True)
     with f3:
         st.markdown(card("概率而非点预测", "历史条件分布 + 块状 bootstrap 蒙特卡洛，给出 P5/P50/P95 与正收益概率，不给单一目标价。"),
@@ -1589,7 +1590,7 @@ def page_about():
         {"页面": "策略实验室", "解决什么问题": "因子（选股特征）到底有没有预测力？", "怎么用": "看IC、年度轮动和分层，不要只看一条净值曲线。"},
         {"页面": "组合回测", "解决什么问题": "给定配置比例，历史上会赚多少、极端行情会亏多少？", "怎么用": "拖滑块，观察风险贡献和压力测试。"},
         {"页面": "今日信号", "解决什么问题": "把所有A股标的放在同一把尺上排序。", "怎么用": "当观察池，不是买入清单。"},
-        {"页面": "扩展研究", "解决什么问题": "商品、债券、黄金对A股环境有什么参考？", "怎么用": "可选，不影响主线。"},
+        {"页面": "跨资产参考", "解决什么问题": "商品、债券、黄金对A股环境有什么参考？", "怎么用": "可选，不影响主线。"},
     ])
     st.dataframe(page_map, hide_index=True, width="stretch")
 
@@ -1657,7 +1658,7 @@ THS_PASSWORD = "your_password"
 | 数据 | 来源 | 频率 | 用途 |
 |---|---|---|---|
 | A股/指数行情 | 东方财富、新浪、同花顺 iFinD | 日/实时 | 趋势、动量、回测、盯盘 |
-| 沪深300/中证500成分 | 中证指数 | 月度 | 深度股票池（791只可用） |
+| 股票池 | 沪深交易所 | 实时/日 | 全 A 代码与快照 |
 | PE/PB/市值 | 东方财富 | 日 | 估值、规模因子 |
 | 财务指标 | 新浪财经 | 季度 | 质量评分 |
 | 全A股代码 | 沪深交易所 | 日 | 5579 只代码搜索 |
@@ -1672,12 +1673,11 @@ THS_PASSWORD = "your_password"
 - 债券收益为久期近似，未计凸性与信用利差；
 - 估值分位基于历史，不代表未来中枢不变。
 """)
-    st.warning(DISCLAIMER)
 
 
 # ------------------------------------------------------------------ sidebar
 def page_extension():
-    st.markdown("### 扩展研究：跨资产环境参考")
+    st.markdown("### 跨资产参考")
     st.caption("以下内容保留用于观察 A 股之外的环境变量，不属于平台主线；主线是 A 股盯盘与策略。")
     tab1, tab2 = st.tabs(["跨资产配置", "商品周期"])
     with tab1:
@@ -1690,13 +1690,12 @@ def main():
     with st.sidebar:
         st.markdown("""
         <div style="padding:8px 4px 18px">
-          <div style="font-size:24px;font-weight:600;letter-spacing:2px;color:#111827">衡策</div>
-          <div style="font-size:11px;letter-spacing:3px;color:#6b7280">HENGCE QUANT</div>
-          <div style="font-size:12px;color:#6b7280;margin-top:8px">A股量化盯盘与策略</div>
+          <div style="font-size:24px;font-weight:600;letter-spacing:2px;color:#111827">Blockpig</div>
+          <div style="font-size:11px;letter-spacing:3px;color:#6b7280">QUANT PLATFORM</div>
         </div>
         """, unsafe_allow_html=True)
         nav = ["实时盯盘", "A股总览", "新闻情绪", "个股诊断", "财务指标",
-               "行业轮动", "策略实验室", "组合回测", "今日信号", "扩展研究", "方法与部署"]
+               "行业轮动", "策略实验室", "组合回测", "今日信号", "跨资产参考", "方法与部署"]
         keys = {"live": 0, "overview": 1, "news": 2, "xray": 3, "finance": 4,
                 "sectors": 5, "factors": 6, "portfolio": 7,
                 "signals": 8, "extension": 9, "about": 10}
@@ -1706,19 +1705,23 @@ def main():
             st.session_state["nav"] = nav[idx]
         page = st.radio("导航", nav, key="nav", label_visibility="collapsed")
         st.markdown("---")
-        meta = data.data_freshness()
-        st.caption(f"数据截至 {meta.get('fetched_at','—')[:10]}")
-        bm = load_json("build_meta.json")
-        if bm:
-            st.caption(f"股票池 {bm.get('stocks','—')} 只 · 因子样本 {bm.get('start','')} 至 {bm.get('end','')}")
-        st.caption("行情：同花顺 iFinD / 新浪 · 数据：akshare")
-        st.caption("仅供课程研究，不构成投资建议")
+        try:
+            last_day = data.load_index("sh000300").index.max()
+            n_all = len(data.load_all_stocks())
+            st.caption(f"行情截至 {last_day:%Y-%m-%d} 最近交易日")
+            st.caption(f"全A {n_all:,} 只")
+            _snap = data.load_all_a_latest()
+            if not _snap.empty and "time" in _snap.columns:
+                st.caption(f"全A快照 {_snap['time'].dropna().max()}")
+        except Exception:
+            st.caption("数据加载中")
+        st.caption("日频数据收盘后更新；盘中方向看实时盯盘")
 
     pages = {"A股总览": page_overview, "实时盯盘": page_live, "个股诊断": page_xray,
              "行业轮动": page_sectors, "策略实验室": page_factors,
              "组合回测": page_portfolio, "今日信号": page_signals,
              "新闻情绪": page_news, "财务指标": page_finance,
-             "扩展研究": page_extension, "方法与部署": page_about}
+             "跨资产参考": page_extension, "方法与部署": page_about}
     pages[page]()
 
 

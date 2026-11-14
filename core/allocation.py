@@ -221,7 +221,7 @@ def strategy_backtests() -> dict[str, pd.DataFrame]:
                 w_mom.loc[dt, a] = 1.0 / len(picks)
     bt_mom = _rebalance_backtest(w_mom, rets, cost=0.001)
 
-    # 4) HENGCE: ERC base + momentum tilt + 10% vol target
+    # 4) BLOCKPIG: ERC base + momentum tilt + 10% vol target
     w_h = pd.DataFrame(0.0, index=index, columns=assets)
     for i, dt in enumerate(index):
         if i < 36:
@@ -244,7 +244,7 @@ def strategy_backtests() -> dict[str, pd.DataFrame]:
     bt_h = _rebalance_backtest(w_h, rets, cost=0.001)
 
     return {"60/40": bt_6040, "风险平价": bt_erc, "双动量": bt_mom,
-            "衡策组合": bt_h, "_weights": w_h, "_erc_weights": w_erc}
+            "Blockpig组合": bt_h, "_weights": w_h, "_erc_weights": w_erc}
 
 
 def strategy_summary(backs: dict[str, pd.DataFrame] | None = None) -> pd.DataFrame:

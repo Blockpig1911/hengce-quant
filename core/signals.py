@@ -197,7 +197,18 @@ def commodity_diagnosis(symbol: str) -> dict:
 def stock_diagnosis(code: str) -> dict:
     px_df = data.load_stock_price(code)
     if px_df.empty:
-        return {}
+        latest = data.load_all_a_latest()
+        if latest.empty or not (latest["code"] == code).any():
+            return {}
+        r = latest[latest["code"] == code].iloc[0]
+        action, color = quadrant_action(50, 50)
+        return {"symbol": code, "name": r.get("name", code), "type": "个股快照",
+                "price": float(r["price"]), "score": 50.0, "odds": 50.0, "timing": 50.0,
+                "action": action, "color": color, "valuation": {}, "valuation_score": np.nan,
+                "quality": np.nan, "roe": np.nan, "gross_margin": np.nan, "debt_ratio": np.nan,
+                "trend": np.nan, "momentum_pct": np.nan, "vol_score": np.nan,
+                "drawdown": np.nan, "ret_1m": np.nan, "ret_12m": np.nan,
+                "basis": "仅实时快照", "pe": r.get("pe"), "pb": r.get("pb")}
     px = px_df["close"]
     val_df = data.load_stock_value(code)
     val = {}

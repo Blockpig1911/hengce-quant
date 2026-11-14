@@ -46,7 +46,7 @@ def main() -> int:
 
     def _allocation():
         back = allocation.strategy_backtests()
-        nav = back["衡策组合"]
+        nav = back["Blockpig组合"]
         assert len(nav) > 150
         w = back["_weights"].iloc[-1]
         assert 0 < w.sum() <= 1.01, float(w.sum())

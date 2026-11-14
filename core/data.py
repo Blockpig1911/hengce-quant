@@ -90,6 +90,25 @@ def load_stock_fin_hist(code: str) -> pd.DataFrame:
 
 
 @lru_cache(maxsize=1)
+def load_all_a_latest() -> pd.DataFrame:
+    path = DATA / "all_a" / "latest.csv"
+    if not path.exists():
+        return pd.DataFrame()
+    df = pd.read_csv(path, dtype={"code": str})
+    df["code"] = df["code"].str.zfill(6)
+    return df
+
+
+@lru_cache(maxsize=1)
+def load_all_universe() -> pd.DataFrame:
+    a = load_all_stocks()
+    latest = load_all_a_latest()
+    if latest.empty:
+        return a
+    return a.merge(latest[["code", "price", "pct_chg", "pe", "pb", "time"]], on="code", how="left")
+
+
+@lru_cache(maxsize=1)
 def load_universe() -> pd.DataFrame:
     path = DATA / "meta" / "universe.csv"
     df = pd.read_csv(path, dtype={"code": str})

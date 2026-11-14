@@ -107,23 +107,38 @@ def main():
 
     print("[6/7] financial snapshot")
     fin_rows = []
-    uni = data.load_universe()
+    uni = data.load_all_stocks()
+    yj = pd.read_csv(DATA / "meta" / "yjbb_latest.csv", dtype={"股票代码": str})
+    yj["股票代码"] = yj["股票代码"].str.zfill(6)
+    yj = yj.set_index("股票代码")
+    snap = data.load_all_a_latest().set_index("code") if not data.load_all_a_latest().empty else pd.DataFrame()
     for _, u in uni.iterrows():
         code = u["code"]
         f = data.load_stock_fin(code)
-        if not f:
-            continue
+        h = data.load_stock_fin_hist(code)
+        if not f and not h.empty:
+            f = h.iloc[-1].to_dict()
+        f = f or {}
         v = data.load_stock_value(code)
         last = v.iloc[-1] if not v.empty else {}
-        h = data.load_stock_fin_hist(code)
+        pe = last.get("pe_ttm") if hasattr(last, "get") else np.nan
+        pb = last.get("pb") if hasattr(last, "get") else np.nan
+        if (pd.isna(pe) or pd.isna(pb)) and not snap.empty and code in snap.index:
+            pe = snap.loc[code, "pe"] if pd.isna(pe) else pe
+            pb = snap.loc[code, "pb"] if pd.isna(pb) else pb
         ag = float(h["asset_growth"].dropna().iloc[-1]) if not h.empty and "asset_growth" in h else np.nan
+        y = yj.loc[code] if code in yj.index else None
+        roe = f.get("roe") if pd.notna(f.get("roe")) else (y["净资产收益率"] if y is not None else np.nan)
+        gm = f.get("gross_margin") if pd.notna(f.get("gross_margin")) else (y["销售毛利率"] if y is not None else np.nan)
+        rg = f.get("rev_growth") if pd.notna(f.get("rev_growth")) else (y["营业总收入-同比增长"] if y is not None else np.nan)
+        pg = f.get("profit_growth") if pd.notna(f.get("profit_growth")) else (y["净利润-同比增长"] if y is not None else np.nan)
         fin_rows.append({
-            "code": code, "name": u["name"], "roe": f.get("roe"),
-            "gross_margin": f.get("gross_margin"), "net_margin": f.get("net_margin"),
-            "debt_ratio": f.get("debt_ratio"), "rev_growth": f.get("rev_growth"),
-            "profit_growth": f.get("profit_growth"), "asset_growth": ag,
-            "pe": last.get("pe_ttm") if hasattr(last, "get") else np.nan,
-            "pb": last.get("pb") if hasattr(last, "get") else np.nan,
+            "code": code, "name": u["name"], "roe": roe,
+            "gross_margin": gm, "net_margin": f.get("net_margin"),
+            "debt_ratio": f.get("debt_ratio"), "rev_growth": rg,
+            "profit_growth": pg, "asset_growth": ag,
+            "industry": (y["所处行业"] if y is not None else ""),
+            "pe": pe, "pb": pb,
             "mcap": last.get("mcap") if hasattr(last, "get") else np.nan,
         })
     save(pd.DataFrame(fin_rows), "fin_snapshot")

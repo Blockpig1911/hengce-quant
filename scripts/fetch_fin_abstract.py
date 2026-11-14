@@ -54,10 +54,10 @@ def fetch(code: str):
 
 
 def main():
-    codes = pd.read_csv(DATA / "meta" / "universe.csv", dtype={"code": str})["code"].tolist()
+    codes = pd.read_csv(DATA / "meta" / "all_stocks.csv", dtype={"code": str})["code"].tolist()
     t0 = time.time()
     done = 0
-    with ThreadPoolExecutor(max_workers=10) as pool:
+    with ThreadPoolExecutor(max_workers=20) as pool:
         futures = {pool.submit(fetch, c): c for c in codes}
         for fut in as_completed(futures):
             done += 1
