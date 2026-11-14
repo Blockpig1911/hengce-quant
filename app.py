@@ -17,7 +17,7 @@ from core.config import (ASSET_COLORS, DATA, FUTURES_META,
 from core.indicators import drawdown, metrics_from_returns, returns, sma
 
 st.set_page_config(page_title="Blockpig · A股量化平台", page_icon="◈",
-                   layout="wide", initial_sidebar_state="expanded")
+                   layout="wide", initial_sidebar_state="auto")
 
 CSS = """
 <style>
