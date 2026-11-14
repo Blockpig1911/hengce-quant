@@ -48,6 +48,12 @@ div[data-testid="stMetricDelta"] { font-size:12px; line-height:1.4; }
 div.stButton>button { border-radius:6px; border:1px solid #d1d5db; }
 h3 { font-size:18px !important; font-weight:600 !important; margin-top:26px !important; }
 h4 { font-size:15px !important; font-weight:600 !important; margin-top:20px !important; }
+@media (max-width: 680px) {
+  .block-container { padding-left: 0.9rem; padding-right: 0.9rem; }
+  div[data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
+  div[data-testid="stHorizontalBlock"] > div { min-width: 100%; }
+  .hero h1 { font-size:22px; }
+}
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
@@ -291,12 +297,7 @@ def page_overview():
                 "滞胀": "增长弱、通胀高，黄金与现金占优",
                 "衰退": "增长与通胀双弱，债券占优，股票等待盈利底"}
         label = reg.get("regime", "—")
-        try:
-            _ns = news.market_snapshot(load_news())
-            news_line = (f"<p>新闻情绪 <b>{_ns.get('score', float('nan')):.0f} / 100</b>，"
-                         f"正面 {_ns.get('pos', 0)} 条 / 负面 {_ns.get('neg', 0)} 条</p>")
-        except Exception:
-            news_line = ""
+        news_line = ""
         st.markdown(f"""
         <div class="card">
           <h4>当前宏观状态</h4>
@@ -1740,7 +1741,7 @@ def main():
                 "signals": 8, "extension": 9, "about": 10}
         if "nav" not in st.session_state:
             qp = st.query_params.get("page", "")
-            idx = keys.get(qp, nav.index(qp) if qp in nav else 0)
+            idx = keys.get(qp, nav.index(qp) if qp in nav else 1)
             st.session_state["nav"] = nav[idx]
         page = st.radio("导航", nav, key="nav", label_visibility="collapsed")
         st.markdown("---")
