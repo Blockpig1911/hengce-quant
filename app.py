@@ -459,41 +459,43 @@ def page_live():
 
     if "live_extra" not in st.session_state:
         st.session_state.live_extra = []
+
+    with st.form("add_watch", clear_on_submit=True):
+        add_text = st.text_input("添加任意 A 股或指数", placeholder="输入 600519、000006、贵州茅台、上证50、000300")
+        submitted = st.form_submit_button("加入盯盘")
+    if submitted:
+        code, name = live.resolve(add_text)
+        if not code:
+            st.error("没有匹配到代码或名称，请检查输入。")
+        else:
+            try:
+                q = live.fetch_quotes([code])
+            except Exception:
+                q = pd.DataFrame()
+            if q.empty:
+                st.error("这个代码没有行情，换一个试试。")
+            elif code in live.DEFAULT_WATCH or code in st.session_state.live_extra:
+                st.info(f"{name} 已经在盯盘池里。")
+            else:
+                st.session_state.live_extra.append(code)
+                st.rerun()
+
     options = {f"{name} ({code})": code for code, (name, _) in live.WATCH_POOL.items()}
-    default = [k for k, v in options.items() if v in live.DEFAULT_WATCH]
-    picked = st.multiselect("宽基指数与常用标的（建议不超过 8 个）", list(options), default=default)
+    for c in st.session_state.live_extra:
+        name_map = dict(zip(data.load_all_stocks()["code"], data.load_all_stocks()["name"]))
+        label = live.WATCH_POOL.get(c, (name_map.get(c.split(".")[0], c), ""))[0]
+        options[f"{label} ({c})"] = c
+    default = [k for k, v in options.items() if v in live.DEFAULT_WATCH or v in st.session_state.live_extra]
+    picked = st.multiselect("当前盯盘池（建议不超过 8 个）", list(options), default=default)
     selected = [options[p] for p in picked]
     for c in st.session_state.live_extra:
         if c not in selected:
             selected.append(c)
     selected = selected or live.DEFAULT_WATCH
-
-    with st.form("add_watch", clear_on_submit=True):
-        add_text = st.text_input("添加任意 A 股或指数", placeholder="输入代码或名称，例如 600519、贵州茅台、上证50、000300")
-        if st.form_submit_button("加入盯盘"):
-            code, name = live.resolve(add_text)
-            if not code:
-                st.warning("没有匹配到代码或名称。")
-            elif code in selected:
-                st.info(f"{name} 已在盯盘池。")
-            else:
-                try:
-                    q = live.fetch_quotes([code])
-                except Exception:
-                    q = pd.DataFrame()
-                if q.empty:
-                    st.warning("这个代码没有行情，检查一下再试。")
-                else:
-                    st.session_state.live_extra.append(code)
-                    st.rerun()
+    if len(selected) > 8:
+        st.caption(f"当前 {len(selected)} 个，建议不超过 8 个，避免接口额度和页面卡顿。")
 
     if st.session_state.live_extra:
-        name_map = dict(zip(data.load_all_stocks()["code"], data.load_all_stocks()["name"]))
-        def _watch_name(c):
-            if c in live.WATCH_POOL:
-                return live.WATCH_POOL[c][0]
-            return name_map.get(c.split(".")[0], c)
-        st.caption("已添加：" + " · ".join(f"{_watch_name(c)} ({c})" for c in st.session_state.live_extra))
         cols = st.columns(min(4, len(st.session_state.live_extra)))
         for i, c in enumerate(list(st.session_state.live_extra)):
             if cols[i % len(cols)].button(f"移除 {c}", key=f"rm_{c}"):
