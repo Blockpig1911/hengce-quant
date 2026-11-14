@@ -457,17 +457,48 @@ def page_live():
     if "live_on" not in st.session_state:
         st.session_state.live_on = False
 
+    if "live_extra" not in st.session_state:
+        st.session_state.live_extra = []
     options = {f"{name} ({code})": code for code, (name, _) in live.WATCH_POOL.items()}
     default = [k for k, v in options.items() if v in live.DEFAULT_WATCH]
-    picked = st.multiselect("盯盘池（建议不超过 8 个，控制接口配额）", list(options), default=default)
-    selected = [options[p] for p in picked] or live.DEFAULT_WATCH
-    extra = st.text_input("补充任意 A 股代码（逗号分隔，例如 000001,600036）", "")
-    if extra:
-        known = set(data.load_all_stocks()["code"])
-        for c in extra.replace("，", ",").split(","):
-            c = c.strip()
-            if c.isdigit() and len(c) == 6 and (not known or c in known):
-                selected.append(live.to_ths_code(c))
+    picked = st.multiselect("宽基指数与常用标的（建议不超过 8 个）", list(options), default=default)
+    selected = [options[p] for p in picked]
+    for c in st.session_state.live_extra:
+        if c not in selected:
+            selected.append(c)
+    selected = selected or live.DEFAULT_WATCH
+
+    with st.form("add_watch", clear_on_submit=True):
+        add_text = st.text_input("添加任意 A 股或指数", placeholder="输入代码或名称，例如 600519、贵州茅台、上证50、000300")
+        if st.form_submit_button("加入盯盘"):
+            code, name = live.resolve(add_text)
+            if not code:
+                st.warning("没有匹配到代码或名称。")
+            elif code in selected:
+                st.info(f"{name} 已在盯盘池。")
+            else:
+                try:
+                    q = live.fetch_quotes([code])
+                except Exception:
+                    q = pd.DataFrame()
+                if q.empty:
+                    st.warning("这个代码没有行情，检查一下再试。")
+                else:
+                    st.session_state.live_extra.append(code)
+                    st.rerun()
+
+    if st.session_state.live_extra:
+        name_map = dict(zip(data.load_all_stocks()["code"], data.load_all_stocks()["name"]))
+        def _watch_name(c):
+            if c in live.WATCH_POOL:
+                return live.WATCH_POOL[c][0]
+            return name_map.get(c.split(".")[0], c)
+        st.caption("已添加：" + " · ".join(f"{_watch_name(c)} ({c})" for c in st.session_state.live_extra))
+        cols = st.columns(min(4, len(st.session_state.live_extra)))
+        for i, c in enumerate(list(st.session_state.live_extra)):
+            if cols[i % len(cols)].button(f"移除 {c}", key=f"rm_{c}"):
+                st.session_state.live_extra.remove(c)
+                st.rerun()
 
     stat, is_open = live.market_status()
     c1, c2, c3 = st.columns([1.2, 1, 1])
