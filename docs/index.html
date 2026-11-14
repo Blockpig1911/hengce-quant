@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blockpig · A股量化平台</title>
+<style>
+  :root { --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --navy:#1f3a5f; --bg:#f7f8fa; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; line-height:1.65; }
+  .wrap { max-width:1060px; margin:0 auto; padding:0 20px; }
+  header { padding:34px 0 22px; border-bottom:1px solid var(--line); background:#fff; }
+  .brand { font-size:30px; font-weight:700; letter-spacing:1px; }
+  .sub { color:var(--muted); font-size:14px; margin-top:4px; }
+  .hero { display:grid; grid-template-columns:1.15fr .85fr; gap:28px; padding:34px 0 26px; align-items:center; }
+  h1 { font-size:26px; line-height:1.35; margin:0 0 12px; }
+  p { margin:0 0 12px; color:#374151; }
+  .stats { display:flex; gap:22px; margin:18px 0 22px; flex-wrap:wrap; }
+  .stat b { display:block; font-size:22px; color:var(--navy); }
+  .stat span { font-size:12px; color:var(--muted); }
+  .btns { display:flex; gap:10px; flex-wrap:wrap; }
+  a.btn { display:inline-block; padding:11px 18px; border-radius:6px; text-decoration:none; font-size:14px; }
+  a.primary { background:var(--navy); color:#fff; }
+  a.secondary { background:#fff; color:var(--navy); border:1px solid #cfd8e3; }
+  .note { margin-top:14px; font-size:12px; color:var(--muted); }
+  .shot { background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .shot img { display:block; width:100%; height:auto; }
+  section { padding:30px 0 6px; }
+  h2 { font-size:18px; margin:0 0 14px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px 18px; }
+  .card h3 { font-size:14px; margin:0 0 6px; }
+  .card p { font-size:13px; color:#4b5563; margin:0; }
+  footer { border-top:1px solid var(--line); margin-top:32px; padding:20px 0 36px; color:var(--muted); font-size:12px; }
+  @media (max-width:760px) {
+    .hero { grid-template-columns:1fr; }
+    .grid { grid-template-columns:1fr; }
+    h1 { font-size:22px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">Blockpig</div>
+    <div class="sub">A股盯盘、诊断与策略回测平台</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <div>
+      <h1>一个入口，看全 A 股的方向、估值与策略。</h1>
+      <p>平台覆盖全 A 股实时快照、主要成分股历史行情、财务指标、申万行业、财经新闻与实时盯盘。用同一套赔率与胜率规则，比较宽基、行业与个股。</p>
+      <div class="stats">
+        <div class="stat"><b>5,579</b><span>全 A 股代码</span></div>
+        <div class="stat"><b>11</b><span>功能页面</span></div>
+        <div class="stat"><b>FF3 / FF5 / CH4</b><span>经典因子模型</span></div>
+      </div>
+      <div class="btns">
+        <a class="btn primary" href="https://blockpig1911-hengce-quant-app-tdqfaq.streamlit.app" target="_blank" rel="noopener">打开量化平台</a>
+        <a class="btn secondary" href="Blockpig-report.pdf" target="_blank">下载报告 PDF</a>
+      </div>
+      <div class="note">微信内如提示无法打开，请点右上角“…”选择“在浏览器打开”。平台首次启动约需 30–60 秒。</div>
+    </div>
+    <div class="shot"><img src="overview.png" alt="A股总览"></div>
+  </div>
+
+  <section>
+    <h2>平台界面</h2>
+    <div class="grid">
+      <div class="shot"><img src="live.png" alt="实时盯盘" loading="lazy"></div>
+      <div class="shot"><img src="factors.png" alt="策略实验室" loading="lazy"></div>
+      <div class="shot"><img src="finance.png" alt="财务指标" loading="lazy"></div>
+      <div class="shot"><img src="overview.png" alt="A股总览" loading="lazy"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>能做什么</h2>
+    <div class="grid">
+      <div class="card"><h3>实时盯盘</h3><p>手动开启，每 30 秒批量取一次行情；给出方向，并用虚拟账户记录模拟买卖。</p></div>
+      <div class="card"><h3>因子研究</h3><p>FF3、FF5、中国四因子收益，十三个因子的 IC 与分层，自定义权重回测。</p></div>
+      <div class="card"><h3>行业与组合</h3><p>31 个申万行业轮动；股票、债券、黄金、商品的组合回测与压力测试。</p></div>
+      <div class="card"><h3>新闻与财务</h3><p>财经快讯转成情绪分；全 A 股 ROE、毛利率、负债率与成长指标。</p></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Blockpig · 金融工程课程作业 · 2026</div>
+</footer>
+</body>
+</html>
