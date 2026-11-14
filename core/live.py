@@ -26,6 +26,10 @@ WATCH_POOL = {
     "000001.SH": ("上证指数", "指数"),
     "000688.SH": ("科创50", "指数"),
     "399001.SZ": ("深证成指", "指数"),
+    "000016.SH": ("上证50", "指数"),
+    "000852.SH": ("中证1000", "指数"),
+    "899050.BJ": ("北证50", "指数"),
+    "000985.SH": ("中证全指", "指数"),
     "600519.SH": ("贵州茅台", "个股"),
     "300750.SZ": ("宁德时代", "个股"),
     "601318.SH": ("中国平安", "个股"),
@@ -36,7 +40,7 @@ WATCH_POOL = {
     "600900.SH": ("长江电力", "个股"),
 }
 
-DEFAULT_WATCH = ["000300.SH", "000905.SH", "399006.SZ",
+DEFAULT_WATCH = ["000300.SH", "000905.SH", "399006.SZ", "000016.SH",
                  "600519.SH", "300750.SZ", "601318.SH"]
 
 
@@ -220,6 +224,36 @@ def direction_intraday(pct_chg: float, price: float, high: float, low: float,
     if pct_chg < -0.01 and pos < 0.3:
         return "回避", "盘中弱势（仅盘中信号）"
     return "观望", "无深度历史，仅参考盘中"
+
+
+INDEX_CODES = {"000300", "000905", "000852", "000016",
+               "000688", "000985", "000922", "399006", "399001", "899050"}
+
+
+def resolve(text: str) -> tuple[str, str]:
+    """Resolve a stock/index code or Chinese name to a canonical THS code."""
+    t = str(text).strip().replace(" ", "")
+    if not t:
+        return "", ""
+    upper = t.upper()
+    if upper in WATCH_POOL:
+        return upper, WATCH_POOL[upper][0]
+    for c, (n, _) in WATCH_POOL.items():
+        if n == t:
+            return c, n
+    if "." in upper:
+        return upper, WATCH_POOL.get(upper, (upper, ""))[0]
+    if t in INDEX_CODES:
+        suffix = "BJ" if t.startswith("899") else ("SZ" if t.startswith("399") else "SH")
+        code = f"{t}.{suffix}"
+        return code, WATCH_POOL.get(code, (code, ""))[0]
+    names = all_stock_names()
+    for c, n in names.items():
+        if n == t:
+            return to_ths_code(c), n
+    if t.isdigit() and len(t) == 6:
+        return to_ths_code(t), names.get(t, t)
+    return "", ""
 
 
 def direction_for(score: float, pct_chg: float) -> tuple[str, str]:
