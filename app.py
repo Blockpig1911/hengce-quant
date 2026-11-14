@@ -359,6 +359,11 @@ INDEX_MAP = {
 }
 
 
+@st.cache_data(show_spinner=False)
+def run_custom_factor(weights_items: tuple):
+    return factors.custom_backtest(dict(weights_items))
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def daily_score(code: str) -> tuple[float, float]:
     if code in INDEX_MAP:
@@ -717,12 +722,12 @@ def page_finance():
         st.warning("财务快照未生成，请运行 scripts/build_snapshots.py。")
         return
 
-    mapping = {f"{r['name']} ({r['code']})": r["code"] for _, r in fin.iterrows()}
-    labels = list(mapping)
-    idx = next((i for i, k in enumerate(labels) if "600519" in k), 0)
-    label = st.selectbox("选择股票", labels, index=idx)
-    code = mapping[label]
-    row = fin[fin["code"] == code].iloc[0]
+    code = st.text_input("股票代码", "600519").strip().zfill(6)
+    hit = fin[fin["code"] == code]
+    if hit.empty:
+        st.warning("没有这个代码的财务数据。")
+        return
+    row = hit.iloc[0]
 
     c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("ROE", f"{row['roe']:.1f}%" if pd.notna(row["roe"]) else "—")
@@ -815,12 +820,11 @@ def page_xray():
         df = data.load_futures(sym)
         pe_series = pd.Series(dtype=float)
     else:
-        uni = data.load_all_universe()
-        mapping = {f"{r['name']} ({r['code']})": r["code"] for _, r in uni.iterrows()}
-        vals = list(mapping.values())
-        idx = vals.index(qp_code) if qp_code in vals else (vals.index("600519") if "600519" in vals else 0)
-        label = st.selectbox("选择个股（全部 A 股）", list(mapping), index=idx)
-        code = mapping[label]
+        default = qp_code if len(qp_code) == 6 else "600519"
+        code = st.text_input("股票代码", default).strip().zfill(6)
+        names = data.load_all_stocks()
+        hit = names[names["code"] == code]
+        label = f"{hit.iloc[0]['name']} ({code})" if not hit.empty else code
         st.caption("全部 A 股可查；有历史行情的显示完整诊断，其余显示实时快照。")
         d = signals.stock_diagnosis(code)
         df = data.load_stock_price(code)
@@ -1214,7 +1218,7 @@ def page_factors():
     if sum(weights.values()) == 0:
         st.warning("权重全为 0，使用等权。")
         weights = {k: 1.0 for k in weights}
-    bt = factors.custom_backtest(weights)
+    bt = run_custom_factor(tuple(sorted(weights.items())))
     r = bt["returns"]
     nav = (1 + r["net"]).cumprod()
     ew_nav = (1 + r["ew"].fillna(0)).cumprod()
