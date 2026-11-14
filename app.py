@@ -66,6 +66,8 @@ def _load_derived(name: str, mtime: float) -> pd.DataFrame:
     for c in ["date", "月份"]:
         if c in df.columns:
             df[c] = pd.to_datetime(df[c])
+    if "code" in df.columns:
+        df["code"] = df["code"].astype(str).str.zfill(6)
     return df
 
 
