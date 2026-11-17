@@ -429,7 +429,8 @@ def _paper_tick(selected: list[str], allow_trade: bool, news_df: pd.DataFrame | 
                 news_score = float(hit["情绪分"].mean())
         rows.append({"代码": code, "标的": r["name"], "现价": price, "涨跌幅": float(r["pct_chg"]),
                      "日线评分": score, "趋势": trend, "新闻": news_score,
-                     "方向": direction, "理由": reason, "来源": r.get("source", "")})
+                     "方向": direction, "理由": reason, "时间": r.get("time", ""),
+                     "来源": r.get("source", "")})
     equity = acc["cash"] + sum(
         p["shares"] * float(q.loc[q["code"] == c, "price"].iloc[0])
         for c, p in acc["positions"].items() if (q["code"] == c).any())
@@ -554,6 +555,8 @@ def page_live():
         m3.metric("成交/持仓", f"{len(acc['trades'])} / {len(acc['positions'])}", "累计 / 当前")
         m4.metric("已平仓胜率", f"{len(wins)/len(closed)*100:.0f}%" if closed else "—", f"{len(closed)} 笔")
         m5.metric("盯盘状态", stat, f"第 {acc['ticks']} 次刷新 · {source}")
+        if "时间" in sig.columns:
+            st.caption(f"最新行情时间：{sig['时间'].dropna().max()}")
 
         st.markdown("##### 当前信号")
         cols = st.columns(3)
