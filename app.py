@@ -1748,18 +1748,6 @@ def main():
             st.session_state["nav"] = nav[idx]
         page = st.radio("导航", nav, key="nav", label_visibility="collapsed")
         st.markdown("---")
-        try:
-            last_day = data.load_index("sh000300").index.max()
-            n_all = len(data.load_all_stocks())
-            st.caption(f"行情截至 {last_day:%Y-%m-%d} 最近交易日")
-            st.caption(f"全A {n_all:,} 只")
-            _snap = data.load_all_a_latest()
-            if not _snap.empty and "time" in _snap.columns:
-                st.caption(f"全A快照 {_snap['time'].dropna().max()}")
-        except Exception:
-            st.caption("数据加载中")
-        st.caption("日频数据收盘后更新；盘中方向看实时盯盘")
-
     pages = {"A股总览": page_overview, "实时盯盘": page_live, "个股诊断": page_xray,
              "行业轮动": page_sectors, "策略实验室": page_factors,
              "组合回测": page_portfolio, "今日信号": page_signals,
