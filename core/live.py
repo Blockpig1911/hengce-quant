@@ -128,6 +128,9 @@ def ths_quotes(codes: list[str]) -> pd.DataFrame:
             "time": (table.get("time") or [""])[0],
         })
     df = pd.DataFrame(rows)
+    zero = (df["price"].fillna(0) <= 0) & (df["pre_close"].fillna(0) > 0)
+    df.loc[zero, "price"] = df.loc[zero, "pre_close"]
+    df.loc[zero, "pct_chg"] = 0.0
     df["source"] = "同花顺 iFinD"
     return df
 
@@ -144,10 +147,13 @@ def all_stock_names() -> dict[str, str]:
 
 def _first(v):
     if isinstance(v, (list, tuple)) and v:
-        return float(v[0])
-    if v is None:
+        v = v[0]
+    if v is None or v == "":
         return float("nan")
-    return float(v)
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return float("nan")
 
 
 def sina_quotes(codes: list[str]) -> pd.DataFrame:
@@ -185,6 +191,9 @@ def sina_quotes(codes: list[str]) -> pd.DataFrame:
             continue
     df = pd.DataFrame(rows)
     if not df.empty:
+        zero = (df["price"].fillna(0) <= 0) & (df["pre_close"].fillna(0) > 0)
+        df.loc[zero, "price"] = df.loc[zero, "pre_close"]
+        df.loc[zero, "pct_chg"] = 0.0
         df["source"] = "新浪财经（降级）"
     return df
 
